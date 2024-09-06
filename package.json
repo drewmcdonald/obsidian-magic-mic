@@ -1,12 +1,14 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-magic-mic",
 	"version": "1.0.0",
 	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint": "eslint . --ext .ts",
+		"format": "prettier --write ."
 	},
 	"keywords": [],
 	"author": "",
@@ -16,8 +18,13 @@
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
+		"dotenv": "^16.4.5",
 		"esbuild": "0.17.3",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-prettier": "^5.2.1",
 		"obsidian": "latest",
+		"prettier": "^3.3.3",
 		"tslib": "2.4.0",
 		"typescript": "4.7.4"
 	}
