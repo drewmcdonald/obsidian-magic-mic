@@ -21,8 +21,7 @@ const copy_to_plugins = {
 	setup(build) {
 		build.onEnd(() => {
 			const dir = process.env.OBSIDIAN_PLUGINS_PATH;
-			if (!dir)
-				throw new Error('Unable to find OBSIDIAN_PLUGINS_PATH in env');
+			if (!dir) throw new Error('Unable to find OBSIDIAN_PLUGINS_PATH in env');
 
 			const plugin_path = path.join(dir, 'magic-mic');
 
@@ -35,10 +34,7 @@ const copy_to_plugins = {
 				'./manifest.json',
 				path.join(plugin_path, 'manifest.json'),
 			);
-			fs.copyFileSync(
-				'./styles.css',
-				path.join(plugin_path, 'styles.css'),
-			);
+			fs.copyFileSync('./styles.css', path.join(plugin_path, 'styles.css'));
 			// add empty .hotreload file
 			fs.writeFileSync(path.join(plugin_path, '.hotreload'), '');
 		});

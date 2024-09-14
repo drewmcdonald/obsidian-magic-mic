@@ -1,3 +1,3 @@
-import MagicMic from '@plugin/Plugin';
+import MagicMic from './src/Plugin';
 
 export default MagicMic;
