@@ -3,7 +3,7 @@
 	"name": "Magic Mic",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Record audio into notes with AI-generated transcriptions and summaries.",
+	"description": "Record, transcribe, and summarize audio directly into your vault with custom assistants.",
 	"author": "Drew McDonald",
 	"authorUrl": "https://github.com/drewmcdonald",
 	"isDesktopOnly": false

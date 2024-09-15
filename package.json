@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-magic-mic",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Record, transcribe, and summarize audio directly into your Obsidian vault.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -10,8 +10,16 @@
 		"lint": "eslint . --ext .ts",
 		"format": "prettier --write ."
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": [
+		"obsidian",
+		"plugin",
+		"audio",
+		"transcription",
+		"speech-to-text",
+		"note-taking",
+		"productivity"
+	],
+	"author": "Drew McDonald",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
