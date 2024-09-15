@@ -70,7 +70,7 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: 'main.js',
 	minify: prod,
-	plugins: [copy_to_plugins],
+	plugins: prod ? [copy_to_plugins] : [],
 });
 
 if (prod) {
