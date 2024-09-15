@@ -316,11 +316,13 @@ export default class MagicMic extends Plugin {
 	}
 
 	async writeResults({
+		assistantName,
 		audioFile,
 		date,
 		summary,
 		transcript,
 	}: {
+		assistantName: string;
 		audioFile?: TFile;
 		date: moment.Moment;
 		summary: SummarizationResult;
@@ -328,8 +330,9 @@ export default class MagicMic extends Plugin {
 	}): Promise<TFile> {
 		const { linkAudio } = this.settings;
 		const noteName = `Magic Mic - ${date.format('yyMMDDHHmmss')}`;
+		const currentPath = this.app.workspace.getActiveFile()?.path ?? '';
 		const noteFolder = this.app.fileManager.getNewFileParent(
-			this.app.workspace.getActiveFile()?.path ?? '',
+			currentPath,
 			noteName,
 		);
 
@@ -359,10 +362,12 @@ export default class MagicMic extends Plugin {
 		const note = await this.app.vault.create(notePath, noteContent);
 		await this.app.fileManager.processFrontMatter(note, (frontMatter) => {
 			frontMatter.createdBy = 'Magic Mic';
+			frontMatter.assistant = assistantName;
 			frontMatter.recordedAt = date.local().format('YYYY-MM-DD HH:mm:ss');
 			frontMatter.transcript = transcript;
 		});
 
+		await this.app.workspace.openLinkText(note.path, currentPath, true);
 		return note;
 	}
 
@@ -373,6 +378,7 @@ export default class MagicMic extends Plugin {
 		audioFile: TFile;
 		assistantName: string;
 	}): Promise<TFile> {
+		this.setNotice('Magic Mic: processing');
 		const buffer = await this.app.vault.readBinary(audioFile);
 		const transcript = await this.transcribeAudio({ audioFile, buffer });
 		const summary = await this.summarizeTranscript({
@@ -380,6 +386,7 @@ export default class MagicMic extends Plugin {
 			assistantName,
 		});
 		return this.writeResults({
+			assistantName,
 			audioFile,
 			date: moment(),
 			summary,
@@ -399,6 +406,7 @@ export default class MagicMic extends Plugin {
 			assistantName,
 		});
 		return this.writeResults({
+			assistantName,
 			audioFile,
 			date: startedAt,
 			summary,
