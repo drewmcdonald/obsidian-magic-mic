@@ -19,6 +19,7 @@ const prod = process.argv[2] === 'production';
 const copy_to_plugins = {
 	name: 'copy_to_plugins',
 	setup(build) {
+		if (prod) return;
 		build.onEnd(() => {
 			const dir = process.env.OBSIDIAN_PLUGINS_PATH;
 			if (!dir) throw new Error('Unable to find OBSIDIAN_PLUGINS_PATH in env');
@@ -70,7 +71,7 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: 'main.js',
 	minify: prod,
-	plugins: prod ? [copy_to_plugins] : [],
+	plugins: [copy_to_plugins],
 });
 
 if (prod) {
