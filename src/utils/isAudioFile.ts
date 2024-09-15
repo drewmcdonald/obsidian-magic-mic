@@ -6,6 +6,7 @@ const knownAudioFileExtensions = [
 	'm4a',
 	'wav',
 	'webm',
+	'ogg',
 ];
 
 export function isAudioFile({ extension }: { extension: string }): boolean {
