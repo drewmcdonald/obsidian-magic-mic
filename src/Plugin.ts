@@ -269,7 +269,6 @@ export default class MagicMic extends Plugin {
 		return transcribeAudioFile(this.client, {
 			prompt: transcriptionPrompt,
 			audioData,
-			extension: this.audioRecorder.fileExtension,
 			onChunkStart: (i, total) => {
 				let message = 'Magic Mic: transcribing';
 				if (total > 1) message += ` ${i + 1}/${total}`;
@@ -304,6 +303,7 @@ export default class MagicMic extends Plugin {
 			this.setNotice(`Summary refused: ${summary.refusal}`);
 		else if (summary.state === 'error')
 			this.setNotice(`Summary error: ${summary.error}`);
+		else this.notice?.hide();
 
 		return summary;
 	}
