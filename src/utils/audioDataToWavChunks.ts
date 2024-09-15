@@ -1,6 +1,19 @@
 /**
  * Split an audio file into chunks of a maximum size and re-encode them as WAV
  * files.
+ *
+ * This could use some work to become more efficient - for now, everything gets
+ * decoded and re-encoded, even if the source file is compatible and small
+ * enough to go directly to OpenAI. Additionally, re-encoding to WAV means the
+ * output is never compressed, so we're pushing less data into the Whisper API
+ * for every chunk.
+ *
+ *   * TODO: Skip decode/re-encode if we can send the original file directly to
+ *     OpenAI
+ *   * TODO: Consider down-sampling the audio and converting it to mono to save
+ *     space
+ *   * TODO: Consider a more efficient format than WAV
+ *
  */
 export default async function audioDataToWavChunks(
 	audioData: ArrayBuffer,
