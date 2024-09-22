@@ -35,7 +35,9 @@ const copy_to_plugins = {
 				'./manifest.json',
 				path.join(plugin_path, 'manifest.json'),
 			);
-			fs.copyFileSync('./styles.css', path.join(plugin_path, 'styles.css'));
+			if (fs.existsSync(path.join(plugin_path, 'styles.css'))) {
+				fs.unlinkSync(path.join(plugin_path, 'styles.css'));
+			}
 			// add empty .hotreload file
 			fs.writeFileSync(path.join(plugin_path, '.hotreload'), '');
 		});
