@@ -3,8 +3,6 @@
 Record, transcribe, and summarize audio directly into
 [Obsidian](https://obsidian.md) with custom assistants.
 
-## Features
-
 ### ⭐️ Run custom summary assistants
 
 Summary assistants turn your transcribed memos into useful notes. Set up one
