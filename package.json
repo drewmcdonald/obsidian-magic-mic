@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-magic-mic",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Record, transcribe, and summarize audio directly into your Obsidian vault.",
 	"main": "main.js",
 	"scripts": {
