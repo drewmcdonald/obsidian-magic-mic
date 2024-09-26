@@ -2,53 +2,37 @@ import { toFile } from 'openai';
 import { FileLike } from 'openai/uploads';
 
 /**
- * Split an audio file into chunks of a maximum size and re-encode them as WAV
- * files.
- *
- * This could use some work to become more efficient - re-encoding to WAV means
- * the output is never compressed, so we're pushing less audio data into the
- * Whisper API for every chunk.
- *
- *   * TODO: Consider down-sampling the audio and converting it to mono to save
- *     space
- *   * TODO: Consider a more efficient format than WAV
- *
+ * Given an input file, converts it to mono, splits that mono audio into chunks
+ * of a maximum size, and re-encodes the chunks as WAV files.
  */
 export default async function audioDataToChunkedFiles(
   audioData: ArrayBuffer,
   maxSize: number,
 ): Promise<FileLike[]> {
   const audioContext = new window.AudioContext();
-  const audioBuffer = await audioContext.decodeAudioData(audioData);
+  const monoBuffer = await audioDataToMono(audioContext, audioData);
 
-  const { sampleRate, numberOfChannels, length } = audioBuffer;
 
   // Calculate chunk size in terms of samples (maxSize is in bytes)
-  const bytesPerSample = 4; // 32-bit float = 4 bytes
-  const chunkSamples = Math.floor(
-    maxSize / (numberOfChannels * bytesPerSample),
-  );
-  const nChunks = Math.ceil(length / chunkSamples);
+  const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
+  const nChunks = Math.ceil(monoBuffer.length / chunkSamples);
 
   const files: FileLike[] = [];
 
   for (let i = 0; i < nChunks; i++) {
     const startSample = i * chunkSamples;
-    const endSample = Math.min((i + 1) * chunkSamples, length);
+    const endSample = Math.min((i + 1) * chunkSamples, monoBuffer.length);
 
     // Create a new empty AudioBuffer for each chunk
     const chunkBuffer = audioContext.createBuffer(
-      numberOfChannels,
+      1,
       endSample - startSample,
-      sampleRate,
+      monoBuffer.sampleRate,
     );
 
-    // Copy each channel's data from the original AudioBuffer
-    for (let channel = 0; channel < numberOfChannels; channel++) {
-      const chunkData = chunkBuffer.getChannelData(channel);
-      const originalData = audioBuffer.getChannelData(channel);
-      chunkData.set(originalData.slice(startSample, endSample));
-    }
+    const chunkData = chunkBuffer.getChannelData(0);
+    const originalData = monoBuffer.getChannelData(0);
+    chunkData.set(originalData.slice(startSample, endSample));
 
     // Convert the chunk to a WAV ArrayBuffer
     const wavArrayBuffer = audioBufferToWav(chunkBuffer);
@@ -58,6 +42,35 @@ export default async function audioDataToChunkedFiles(
   }
 
   return files;
+}
+
+// Convert an audio buffer to a mono buffer
+async function audioDataToMono(
+  audioContext: AudioContext,
+  audioData: ArrayBuffer,
+): Promise<AudioBuffer> {
+  const audioBuffer = await audioContext.decodeAudioData(audioData);
+
+  if (audioBuffer.numberOfChannels === 1) return audioBuffer;
+
+  const monoBuffer = new AudioBuffer({
+    length: audioBuffer.length,
+    numberOfChannels: 1,
+    sampleRate: audioBuffer.sampleRate,
+  });
+
+  const monoData = monoBuffer.getChannelData(0);
+
+  // Mix down
+  for (let i = 0; i < audioBuffer.length; i++) {
+    let sum = 0;
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+      sum += audioBuffer.getChannelData(channel)[i];
+    }
+    monoData[i] = sum / audioBuffer.numberOfChannels;
+  }
+
+  return monoBuffer;
 }
 
 // Look, I'm not gonna pretend ChatGPT didn't write this
