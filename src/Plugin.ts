@@ -23,12 +23,6 @@ export default class MagicMic extends Plugin {
 
     await this.loadSettings();
     this.addSettingTab(new Settings(this.app, this));
-
-    if (!this.settings.openaiApiKey) {
-      new Notice('Magic Mic: OpenAI API key not set', 0);
-      return;
-    }
-
     this.addRibbonIconMenu();
     this.addCommands();
   }
@@ -36,6 +30,16 @@ export default class MagicMic extends Plugin {
   onunload() {
     this.notice?.hide();
     if (this.audioRecorder.state !== 'inactive') this.audioRecorder.stop();
+  }
+
+  assertHasOpenAiKey() {
+    if (this.settings.openaiApiKey && this.settings.openaiApiKey.length) return;
+
+    const msg =
+      'Magic Mic: cannot transcribe or summarize without an OpenAI API key' +
+      'Please add one in the plugin settings.';
+    new Notice(msg);
+    throw new Error(msg);
   }
 
   async loadSettings() {
@@ -237,6 +241,7 @@ export default class MagicMic extends Plugin {
 
   async finishRecording() {
     this.notice?.hide();
+    this.assertHasOpenAiKey();
 
     const startedAt = must(this.audioRecorder.startedAt);
     const blob = await this.audioRecorder.stop();
@@ -407,6 +412,8 @@ export default class MagicMic extends Plugin {
     audioFile: TFile;
     assistantName: string;
   }): Promise<TFile> {
+    this.assertHasOpenAiKey();
+
     this.setNotice('Magic Mic: processing');
     const buffer = await this.app.vault.readBinary(audioFile);
     const transcript = await this.transcribeAudio({ audioFile, buffer });
@@ -428,6 +435,8 @@ export default class MagicMic extends Plugin {
   }: {
     assistantName: string;
   }): Promise<TFile> {
+    this.assertHasOpenAiKey();
+
     const { buffer, audioFile, startedAt } = await this.finishRecording();
     const transcript = await this.transcribeAudio({ buffer, audioFile });
     const summary = await this.summarizeTranscript({
