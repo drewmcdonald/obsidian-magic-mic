@@ -8,6 +8,8 @@ import summarizeTranscription, {
 } from './summarizeTranscription';
 import { must } from './utils/must';
 import { isAudioFile } from './utils/isAudioFile';
+import audioDataToChunkedFiles from './utils/audioDataToChunkedFiles';
+import { FileLike, toFile } from 'openai/uploads';
 
 export default class MagicMic extends Plugin {
   settings: ISettings;
@@ -251,24 +253,33 @@ export default class MagicMic extends Plugin {
     return { buffer, audioFile, startedAt };
   }
 
-  async transcribeAudio({
+  // 25MB limit for audio files, per
+  // https://platform.openai.com/docs/guides/speech-to-text
+  MAX_CHUNK_SIZE = 25 * 1024 * 1024;
+
+  private async chunkAudio({
     audioFile,
     buffer,
-  }: {
-    audioFile?: TFile;
-    buffer?: ArrayBuffer;
-  }): Promise<string> {
-    const { transcriptionHint: transcriptionPrompt } = this.settings;
-
+  }: AudioInput): Promise<FileLike[]> {
     const audioData =
       buffer ?? (audioFile ? await this.app.vault.readBinary(audioFile) : null);
 
     if (!audioData)
       throw new Error('Must provide either an audio file or a buffer');
 
+    if (audioData.byteLength < this.MAX_CHUNK_SIZE) {
+      const fileExtension =
+        audioFile?.extension ?? this.audioRecorder.fileExtension;
+      return [await toFile(audioData, `audio.${fileExtension}`)];
+    }
+
+    return audioDataToChunkedFiles(audioData, this.MAX_CHUNK_SIZE);
+  }
+
+  async transcribeAudio(input: AudioInput): Promise<string> {
     return transcribeAudioFile(this.client, {
-      prompt: transcriptionPrompt,
-      audioData,
+      prompt: this.settings.transcriptionHint,
+      audioFiles: await this.chunkAudio(input),
       onChunkStart: (i, total) => {
         let message = 'Magic Mic: transcribing';
         if (total > 1) message += ` ${i + 1}/${total}`;
@@ -414,3 +425,8 @@ export default class MagicMic extends Plugin {
     });
   }
 }
+
+type AudioInput = {
+  audioFile?: TFile;
+  buffer?: ArrayBuffer;
+};

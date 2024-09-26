@@ -1,24 +1,23 @@
+import { toFile } from 'openai';
+import { FileLike } from 'openai/uploads';
+
 /**
  * Split an audio file into chunks of a maximum size and re-encode them as WAV
  * files.
  *
- * This could use some work to become more efficient - for now, everything gets
- * decoded and re-encoded, even if the source file is compatible and small
- * enough to go directly to OpenAI. Additionally, re-encoding to WAV means the
- * output is never compressed, so we're pushing less data into the Whisper API
- * for every chunk.
+ * This could use some work to become more efficient - re-encoding to WAV means
+ * the output is never compressed, so we're pushing less audio data into the
+ * Whisper API for every chunk.
  *
- *   * TODO: Skip decode/re-encode if we can send the original file directly to
- *     OpenAI
  *   * TODO: Consider down-sampling the audio and converting it to mono to save
  *     space
  *   * TODO: Consider a more efficient format than WAV
  *
  */
-export default async function audioDataToWavChunks(
+export default async function audioDataToChunkedFiles(
   audioData: ArrayBuffer,
   maxSize: number,
-): Promise<ArrayBuffer[]> {
+): Promise<FileLike[]> {
   const audioContext = new window.AudioContext();
   const audioBuffer = await audioContext.decodeAudioData(audioData);
 
@@ -31,7 +30,7 @@ export default async function audioDataToWavChunks(
   );
   const nChunks = Math.ceil(length / chunkSamples);
 
-  const chunks = [];
+  const files: FileLike[] = [];
 
   for (let i = 0; i < nChunks; i++) {
     const startSample = i * chunkSamples;
@@ -53,10 +52,12 @@ export default async function audioDataToWavChunks(
 
     // Convert the chunk to a WAV ArrayBuffer
     const wavArrayBuffer = audioBufferToWav(chunkBuffer);
-    chunks.push(wavArrayBuffer);
+    const file = await toFile(wavArrayBuffer, fileName(i, 'wav'));
+
+    files.push(file);
   }
 
-  return chunks;
+  return files;
 }
 
 // Look, I'm not gonna pretend ChatGPT didn't write this
@@ -111,4 +112,8 @@ function writeString(view: DataView, offset: number, str: string) {
   for (let i = 0; i < str.length; i++) {
     view.setUint8(offset + i, str.charCodeAt(i));
   }
+}
+
+function fileName(i: number, extension: string): string {
+  return `audio_${i.toString().padStart(3, '0')}.${extension}`;
 }
