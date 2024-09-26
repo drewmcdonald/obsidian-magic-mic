@@ -17,7 +17,7 @@ const WHISPER_TOKEN_LIMIT = 224;
  * Handles splitting the file into chunks, processing each chunk, and
  * concatenating the results.
  */
-export default async function transcribeAudioFile(
+export default async function transcribeAudio(
   client: OpenAI,
   { prompt, audioFiles, onChunkStart }: TranscriptionOptions,
 ): Promise<string> {

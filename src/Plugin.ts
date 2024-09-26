@@ -2,14 +2,14 @@ import { Menu, Notice, Plugin, TFile, moment, normalizePath } from 'obsidian';
 import Settings, { type ISettings, DEFAULT_SETTINGS } from './Settings';
 import OpenAI from 'openai';
 import AudioRecorder from './AudioRecorder';
-import transcribeAudioFile from './transcribeAudioFile';
+import transcribeAudio from './transcribeAudio';
 import summarizeTranscription, {
   SummarizationResult,
 } from './summarizeTranscription';
 import { must } from './utils/must';
 import { isAudioFile } from './utils/isAudioFile';
 import audioDataToChunkedFiles from './utils/audioDataToChunkedFiles';
-import { FileLike, toFile } from 'openai/uploads';
+import { toFile } from 'openai/uploads';
 
 export default class MagicMic extends Plugin {
   settings: ISettings;
@@ -255,31 +255,48 @@ export default class MagicMic extends Plugin {
 
   // 25MB limit for audio files, per
   // https://platform.openai.com/docs/guides/speech-to-text
-  MAX_CHUNK_SIZE = 25 * 1024 * 1024;
-
-  private async chunkAudio({
-    audioFile,
+  private MAX_CHUNK_SIZE = 25 * 1024 * 1024;
+  // https://platform.openai.com/docs/guides/speech-to-text/introduction
+  private SUPPORTED_FILE_EXTENSIONS = [
+    'mp3',
+    'mp4',
+    'mpeg',
+    'mpga',
+    'm4a',
+    'wav',
+    'webm',
+  ];
+  async transcribeAudio({
     buffer,
-  }: AudioInput): Promise<FileLike[]> {
+    audioFile,
+  }: {
+    audioFile?: TFile;
+    buffer?: ArrayBuffer;
+  }): Promise<string> {
     const audioData =
       buffer ?? (audioFile ? await this.app.vault.readBinary(audioFile) : null);
 
     if (!audioData)
       throw new Error('Must provide either an audio file or a buffer');
 
-    if (audioData.byteLength < this.MAX_CHUNK_SIZE) {
-      const fileExtension =
-        audioFile?.extension ?? this.audioRecorder.fileExtension;
-      return [await toFile(audioData, `audio.${fileExtension}`)];
-    }
+    const audioFiles = await (async () => {
+      if (
+        audioData.byteLength < this.MAX_CHUNK_SIZE &&
+        this.SUPPORTED_FILE_EXTENSIONS.includes(
+          audioFile?.extension.toLowerCase() ??
+            this.audioRecorder.fileExtension,
+        )
+      ) {
+        const fileExtension =
+          audioFile?.extension ?? this.audioRecorder.fileExtension;
+        return [await toFile(audioData, `audio.${fileExtension}`)];
+      }
+      return audioDataToChunkedFiles(audioData, this.MAX_CHUNK_SIZE);
+    })();
 
-    return audioDataToChunkedFiles(audioData, this.MAX_CHUNK_SIZE);
-  }
-
-  async transcribeAudio(input: AudioInput): Promise<string> {
-    return transcribeAudioFile(this.client, {
+    return transcribeAudio(this.client, {
       prompt: this.settings.transcriptionHint,
-      audioFiles: await this.chunkAudio(input),
+      audioFiles,
       onChunkStart: (i, total) => {
         let message = 'Magic Mic: transcribing';
         if (total > 1) message += ` ${i + 1}/${total}`;
@@ -425,8 +442,3 @@ export default class MagicMic extends Plugin {
     });
   }
 }
-
-type AudioInput = {
-  audioFile?: TFile;
-  buffer?: ArrayBuffer;
-};
