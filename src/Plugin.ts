@@ -36,8 +36,8 @@ export default class MagicMic extends Plugin {
     if (this.settings.openaiApiKey && this.settings.openaiApiKey.length) return;
 
     const msg =
-      'Magic Mic: cannot transcribe or summarize without an OpenAI API key' +
-      'Please add one in the plugin settings.';
+      'Magic Mic: cannot transcribe or summarize without an OpenAI API key; ' +
+      'please add one in the plugin settings.';
     new Notice(msg);
     throw new Error(msg);
   }
