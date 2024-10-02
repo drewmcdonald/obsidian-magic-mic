@@ -32,22 +32,31 @@ export default class MagicMic extends Plugin {
     if (this.audioRecorder.state !== 'inactive') this.audioRecorder.stop();
   }
 
-  assertHasOpenAiKey() {
-    if (this.settings.openaiApiKey && this.settings.openaiApiKey.length) return;
+  get hasOpenAiKey() {
+    return this.settings.openaiApiKey && this.settings.openaiApiKey.length;
+  }
 
-    const msg =
-      'Magic Mic: cannot transcribe or summarize without an OpenAI API key; ' +
-      'please add one in the plugin settings.';
-    new Notice(msg);
-    throw new Error(msg);
+  missingOpenAiKeyMsg =
+    'Magic Mic: cannot transcribe or summarize without an OpenAI API key; ' +
+    'please add one in the plugin settings.';
+
+  assertHasOpenAiKey() {
+    if (this.hasOpenAiKey) return;
+
+    new Notice(this.missingOpenAiKeyMsg);
+    throw new Error(this.missingOpenAiKeyMsg);
   }
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    if (!this.hasOpenAiKey) {
+      new Notice(this.missingOpenAiKeyMsg, 0);
+    }
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
+    await this.loadSettings();
   }
 
   addRibbonIconMenu() {
