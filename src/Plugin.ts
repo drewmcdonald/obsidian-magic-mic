@@ -228,6 +228,11 @@ export default class MagicMic extends Plugin {
     }
   }
 
+  clearNotice() {
+    this.notice?.hide();
+    this.notice = undefined;
+  }
+
   startRecording() {
     this.audioRecorder.start();
     this.setNotice('Magic Mic: recording 🔴');
@@ -346,7 +351,9 @@ export default class MagicMic extends Plugin {
       this.setNotice(`Summary refused: ${summary.refusal}`);
     else if (summary.state === 'error')
       this.setNotice(`Summary error: ${summary.error}`);
-    else this.notice?.hide();
+    else {
+      this.clearNotice();
+    }
 
     return summary;
   }
