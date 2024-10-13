@@ -10,8 +10,8 @@ export default async function audioDataToChunkedFiles(
   maxSize: number,
 ): Promise<FileLike[]> {
   const audioContext = new window.AudioContext();
-  const monoBuffer = await audioDataToMono(audioContext, audioData);
-
+  const sourceBuffer = await audioContext.decodeAudioData(audioData);
+  const monoBuffer = audioBufferToMono(audioContext, sourceBuffer);
 
   // Calculate chunk size in terms of samples (maxSize is in bytes)
   const chunkSamples = Math.floor(maxSize / 4); // 32-bit float = 4 bytes
@@ -44,30 +44,28 @@ export default async function audioDataToChunkedFiles(
   return files;
 }
 
-// Convert an audio buffer to a mono buffer
-async function audioDataToMono(
+/**
+ * Converts a multi-channel AudioBuffer to mono by averaging all channels.
+ */
+function audioBufferToMono(
   audioContext: AudioContext,
-  audioData: ArrayBuffer,
-): Promise<AudioBuffer> {
-  const audioBuffer = await audioContext.decodeAudioData(audioData);
+  audioBuffer: AudioBuffer,
+) {
+  const numberOfChannels = audioBuffer.numberOfChannels;
+  if (numberOfChannels === 1) return audioBuffer;
 
-  if (audioBuffer.numberOfChannels === 1) return audioBuffer;
-
-  const monoBuffer = new AudioBuffer({
-    length: audioBuffer.length,
-    numberOfChannels: 1,
-    sampleRate: audioBuffer.sampleRate,
-  });
+  const length = audioBuffer.length;
+  const sampleRate = audioBuffer.sampleRate;
+  const monoBuffer = audioContext.createBuffer(1, length, sampleRate);
 
   const monoData = monoBuffer.getChannelData(0);
-
-  // Mix down
-  for (let i = 0; i < audioBuffer.length; i++) {
+  // Average all channels
+  for (let i = 0; i < length; i++) {
     let sum = 0;
-    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+    for (let channel = 0; channel < numberOfChannels; channel++) {
       sum += audioBuffer.getChannelData(channel)[i];
     }
-    monoData[i] = sum / audioBuffer.numberOfChannels;
+    monoData[i] = sum / numberOfChannels;
   }
 
   return monoBuffer;
