@@ -9,7 +9,6 @@ import summarizeTranscription, {
 import { must } from './utils/must';
 import { isAudioFile } from './utils/isAudioFile';
 import audioDataToChunkedFiles from './utils/audioDataToChunkedFiles';
-import { toFile } from 'openai/uploads';
 
 export default class MagicMic extends Plugin {
   settings: ISettings;
@@ -298,21 +297,10 @@ export default class MagicMic extends Plugin {
     if (!audioData)
       throw new Error('Must provide either an audio file or a buffer');
 
-    const audioFiles = await (async () => {
-      const fileExtension = (
-        audioFile?.extension ?? this.audioRecorder.fileExtension
-      ).toLowerCase();
-      // If the file is small enough and has a supported extension, upload it as
-      // a single file
-      if (
-        audioData.byteLength < this.MAX_CHUNK_SIZE &&
-        this.SUPPORTED_FILE_EXTENSIONS.includes(fileExtension)
-      ) {
-        return [await toFile(audioData, `audio.${fileExtension}`)];
-      }
-      // Otherwise, split the file into chunks
-      return audioDataToChunkedFiles(audioData, this.MAX_CHUNK_SIZE);
-    })();
+    const audioFiles = await audioDataToChunkedFiles(
+      audioData,
+      this.MAX_CHUNK_SIZE,
+    );
 
     return transcribeAudio(this.client, {
       prompt: this.settings.transcriptionHint,
