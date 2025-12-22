@@ -1,12 +1,15 @@
 import OpenAI from 'openai';
 
 export const models = [
+  'gpt-5.2',
+  'gpt-5.1',
+  'gpt-5',
+  'gpt-5-mini',
+  'gpt-5-nano',
+  'gpt-4.1',
+  'gpt-4.1-mini',
   'gpt-4o',
-  'gpt-4o-2024-08-06',
   'gpt-4o-mini',
-  'gpt-4-turbo',
-  'gpt-4',
-  'gpt-3.5-turbo',
 ] as const;
 export type Model = (typeof models)[number];
 export interface SummarizationOptions {
